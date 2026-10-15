@@ -636,8 +636,8 @@ twikoo:
 # 前往 https://giscus.app/ 输入仓库信息生成 repo_id 和 category_id
 giscus:
   repo: MeloBrush/my-blog
-  repo_id:
-  category_id:
+  repo_id: R_kgDOVK6Mmg
+  category_id: DIC_kwDOVK6Mms4DIgj2
   light_theme: light
   dark_theme: dark
   js:
