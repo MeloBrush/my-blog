@@ -100,11 +100,17 @@ cover:
 
 ### 1. 编译 tslib
 
-先将压缩包上传到 Ubuntu，解压并进入源码存放目录：
+先将压缩包上传到 Ubuntu：
+
+![上传压缩包到 Ubuntu](/images/imx6u-qt/image3.png)
+
+解压并进入源码存放目录：
 
 ```bash
 tar xvf tslib-1.21.tar.bz2
 ```
+
+![解压 tslib 源码](/images/imx6u-qt/image4.png)
 
 编译 tslib 之前需要安装依赖：
 
@@ -125,7 +131,11 @@ make
 make install
 ```
 
+![tslib 编译过程](/images/imx6u-qt/image5.png)
+
 ### 2. 编译 Qt 库源码
+
+![Qt 源码目录](/images/imx6u-qt/image6.png)
 
 解压 Qt 源码：
 
@@ -134,6 +144,8 @@ tar -xvf qt-everywhere-src-5.12.9.tar.xz
 ```
 
 修改 Qt 源码中的 `mkspecs` 配置（`make.conf`），注意这里的交叉编译器一定要是 Linux 自己的 ARM 交叉编译器。
+
+![修改 mkspecs 中的 make.conf](/images/imx6u-qt/image7.png)
 
 进入 `qt-everywhere-src-5.12.9` 文件夹下，配置一个编辑文件 `autoconfig.sh`，完整 configure 命令如下：
 
@@ -201,10 +213,16 @@ tar -xvf qt-everywhere-src-5.12.9.tar.xz
 -recheck-all
 ```
 
+![configure 脚本内容](/images/imx6u-qt/image8.png)
+
+![configure 脚本内容（续）](/images/imx6u-qt/image9.png)
+
 > **注意** 其中三处路径需要根据实际情况修改：
 > 1. `/home/ll/book/qt-everywhere-src-5.12.9/arm-qt` —— Qt 库编译输出路径
 > 2. `/home/ll/book/tslib-1.21/tslib-arm/include` —— tslib 头文件路径
 > 3. `/home/ll/book/tslib-1.21/tslib-arm/lib` —— tslib 库文件路径
+
+![路径配置说明](/images/imx6u-qt/image10.png)
 
 赋予脚本可执行权限，然后执行：
 
@@ -213,7 +231,9 @@ chmod +x autoconfigure.sh
 ./autoconfigure.sh
 ```
 
-configure 成功后，开始编译和安装：
+![configure 成功](/images/imx6u-qt/image11.png)
+
+如上图所示即表示 configure 成功。接下来开始编译和安装：
 
 ```bash
 make -j4
@@ -222,13 +242,29 @@ make install
 
 安装成功会生成一个 `arm-qt` 文件夹。这个编译等待的时长比较久，耐心等待即可。
 
+![make install 生成 arm-qt](/images/imx6u-qt/image12.png)
+
 ## 二、Qt 库移植
 
 ### 1. 启动串口
 
+![串口终端连接](/images/imx6u-qt/image13.png)
+
+![启动开发板](/images/imx6u-qt/image14.png)
+
 正常启动系统、挂载 nfs 时可以看到 `root@ATK-IMX6U:~#` 提示符。但我这里卡在了 TFTP 加载阶段（报 ARP 超时）。
 
-更换设备树，手动输入启动命令后，仍然出现卡住、网络超时的现象。最后我更换了启动命令，使用 EMMC 本地系统，再挂载 nfs 文件，问题解决。
+更换设备树，手动输入启动命令：
+
+![更换设备树手动启动](/images/imx6u-qt/image15.png)
+
+仍然出现卡住、网络超时的现象：
+
+![仍然网络超时](/images/imx6u-qt/image16.png)
+
+![启动卡住现象](/images/imx6u-qt/image17.png)
+
+最后我更换了启动命令，使用 EMMC 本地系统，再挂载 nfs 文件，问题解决。
 
 ### 2. 保证网络通畅
 
@@ -243,19 +279,45 @@ route add default gw 192.168.1.1
 ping 192.168.1.200 -c 4
 ```
 
-ping 通后即可进行后续文件传输。
+ping 通如下图：
+
+![ping 通虚拟机](/images/imx6u-qt/image18.png)
 
 ### 3. scp 上传 tslib 与 arm-qt
 
-通过 scp 将完整的 tslib 与 arm-qt 上传至开发板，并在开发板串口校验目录完整性。
+通过 scp 将完整的 tslib 上传至开发板：
+
+![scp 上传 tslib](/images/imx6u-qt/image19.png)
+
+![tslib 传输完成](/images/imx6u-qt/image20.png)
+
+在开发板校验 tslib 目录完整性：
+
+![开发板校验 tslib 目录](/images/imx6u-qt/image21.png)
+
+再 scp 完整的 arm-qt 上传至开发板：
+
+![scp 上传 arm-qt](/images/imx6u-qt/image22.png)
+
+![arm-qt 传输完成](/images/imx6u-qt/image23.png)
+
+在串口检查：
+
+![串口检查 arm-qt](/images/imx6u-qt/image24.png)
 
 ### 4. 踩坑：x86 版本与 ARM 版本不兼容
 
 这里出现了一个比较棘手的问题：我前几次编译的 `arm-qt` 都是 x86-64 版本，不是 ARM 版本。
 
-这会导致后面运行可执行文件时报找不到 `linuxfb` 库的错误。这个库其实是有的，但是版本不兼容会直接让程序崩溃。
+![发现是 x86-64 版本](/images/imx6u-qt/image25.png)
+
+这会导致后面运行可执行文件时报找不到 `linuxfb` 库的错误。这个库其实是有的，但是版本不兼容会直接让程序崩溃：
+
+![运行报错找不到 linuxfb](/images/imx6u-qt/image26.png)
 
 这个问题本质是 **插件与 Qt 主库版本不兼容**。刚开始的解决方法是修改环境变量、尝试软连接、强制指定插件路径，都解决不了。只能查询更详细的问题，排查到 **库架构 / 编译浮点 ABI 和 i.MX6U 板子不匹配**，表现为非法指令：
+
+![非法指令崩溃](/images/imx6u-qt/image27.png)
 
 > Qt 尝试加载 `libqlinuxfb.so` → 加载触发非法指令直接崩溃 → Qt 捕获加载失败，判定该平台插件不存在，于是打印：
 > `Could not find the Qt platform plugin "linuxfb" in ""`
@@ -292,7 +354,13 @@ export TSLIB_PATH=/home/ll/book/tslib-1.21/install
 -skip qtdoc
 ```
 
-之后重新编译、下载，并检查是否是 ARM 版本。
+这里更改了一些编译指令，之后重新编译、下载：
+
+![重新编译 Qt](/images/imx6u-qt/image28.png)
+
+并检查是否是 ARM 版本：
+
+![检查为 ARM 版本](/images/imx6u-qt/image29.png)
 
 ## 三、程序运行
 
@@ -319,11 +387,23 @@ echo "QT_QPA_PLATFORM = $QT_QPA_PLATFORM"
 /usr/lib/arm-qt/examples/widgets/animation/animatedtiles/animatedtiles
 ```
 
-> 这个示例显示不完整，可能是开发板的问题，尝试了几次都这样。接着测试触摸。
+![运行 Qt 示例程序](/images/imx6u-qt/image30.png)
+
+![示例程序运行结果](/images/imx6u-qt/image31.jpeg)
+
+> 这个示例显示不完整，可能是开发板的问题，尝试了几次都这样。接着测试触摸：
+
+![测试触摸](/images/imx6u-qt/image32.png)
 
 ### 2. 创建自己的可执行文件
 
-先创建一个简单的程序执行，确认流程跑通后，再开始创建自己的可执行文件——我做的是一个 **计算器 + LED 控制** 的界面。
+先创建一个简单的程序执行，成功运行如图：
+
+![简单程序成功运行](/images/imx6u-qt/image34.png)
+
+确认流程跑通后，再开始创建自己的可执行文件——我做的是一个 **计算器 + LED 控制** 的界面：
+
+![计算器界面设计](/images/imx6u-qt/image35.png)
 
 #### calculatorwidget.h
 
@@ -652,15 +732,31 @@ CONFIG += release
 
 ### 3. 编译、上传与运行
 
-交叉编译之后，用 `file` 命令检查生成的可执行文件是否是 ARM 架构，确认后通过 scp 上传到开发板：
+交叉编译之后查看产物：
 
-```bash
-scp calculator root@192.168.1.201:/home/root/
-```
+![编译产物查看](/images/imx6u-qt/image36.png)
 
-在开发板 `/home/root` 目录下查看并运行可执行文件。
+用 `file` 命令检查生成的可执行文件是否是 ARM 架构：
 
-> 开发板上的界面显示和前面检验 arm-qt 时一样，左边看不见，所以我直接让左半边显示黑色占位，右半边显示计算器所有组件——这就是代码里 `leftSpacer` 的由来。
+![检查为 ARM 架构](/images/imx6u-qt/image37.png)
+
+确认后通过 scp 上传到开发板：
+
+![scp 上传到开发板](/images/imx6u-qt/image38.png)
+
+在开发板 `/home/root` 目录下查看：
+
+![开发板查看文件](/images/imx6u-qt/image39.png)
+
+运行可执行文件：
+
+![运行可执行文件](/images/imx6u-qt/image40.png)
+
+开发板上的界面如下图：
+
+![开发板上的计算器界面](/images/imx6u-qt/image41.jpeg)
+
+> 这个和前面检验 arm-qt 时一样，开发板左边看不见，所以我直接让左半边显示黑色占位，右半边显示计算器所有组件——这就是代码里 `leftSpacer` 的由来。
 
 ### 4. 开机自启
 
@@ -669,6 +765,8 @@ scp calculator root@192.168.1.201:/home/root/
 ```bash
 vi calc_start.sh
 ```
+
+![编辑启动脚本](/images/imx6u-qt/image42.png)
 
 赋予执行权限：
 
@@ -681,6 +779,8 @@ chmod 755 calc_start.sh
 ```bash
 ./calc_start.sh
 ```
+
+![运行启动脚本](/images/imx6u-qt/image43.png)
 
 确认无误后，打开开机脚本 `rcS`：
 
